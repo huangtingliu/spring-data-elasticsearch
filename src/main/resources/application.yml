@@ -1,0 +1,79 @@
+server:
+  tomcat:
+    uri-encoding: utf-8
+#  address: 127.0.0.1
+spring:
+  profiles:
+    active: dev #当前启动配置
+  http:
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
+  thymeleaf:
+      prefix: classpath:/pages/
+#以下日志模块，细节到粗略依次为 TRACE, DEBUG, INFO, WARN, ERROR, FATAL
+#debug: true
+#logging.level:
+#  root: error
+#  org.springframework.web: DEBUG
+#  org.hibernate: ERROR
+#  o.e.c.t.TransportClientNodesService: error
+
+
+#mybatis:
+#  mapper-locations: classpath:mapper/*.xml
+#  configuration:
+#    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+#    jdbc-type-for-null: varchar
+
+#============自定义内容区域 开始==========
+SESSION_LOGIN_USER: SESSION_LOGIN_USER
+#===========自定义内容区域 开始
+
+#---
+#server:
+#  port: 8088
+#  address: 127.0.0.3
+#属性解释：https://github.com/alibaba/druid/wiki/DruidDataSource%E9%85%8D%E7%BD%AE%E5%B1%9E%E6%80%A7%E5%88%97%E8%A1%A8
+#spring:
+#  profiles: dev
+#  datasource:
+#    druid:
+#      driver-class-name: com.mysql.jdbc.Driver
+#      initial-size: 5
+#      max-active: 20
+#      min-idle: 5
+#      max-wait: 60000
+##      pool-prepared-statements: false
+##      max-pool-prepared-statement-per-connection-size: 20
+##      max-open-prepared-statements: 20 #和上面的等价
+#      validation-query: SELECT 'x''
+##      validation-query-timeout:
+#      test-on-borrow: false
+#      test-on-return: false
+#      test-while-idle: true
+##      time-between-eviction-runs-millis:
+#      min-evictable-idle-time-millis: 300000
+##      max-evictable-idle-time-millis:
+#      filters:  stat #配置多个英文逗号分隔
+##    name: test
+#    url: jdbc:mysql://localhost:3306/test
+#    username: root
+#    password: root
+##    # 使用druid数据源
+#    type: com.alibaba.druid.pool.DruidDataSource
+#    driver-class-name: com.mysql.jdbc.Driver
+#    filters: stat
+#    maxActive: 20
+#    initialSize: 1
+#    maxWait: 60000
+#    minIdle: 1
+#    timeBetweenEvictionRunsMillis: 60000
+#    minEvictableIdleTimeMillis: 300000
+#    validationQuery: select 'x'
+#    testWhileIdle: true
+#    testOnBorrow: false
+#    testOnReturn: false
+#    poolPreparedStatements: true
+#    maxOpenPreparedStatements: 20

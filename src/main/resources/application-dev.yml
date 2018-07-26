@@ -1,0 +1,60 @@
+server:
+#  address: 127.0.0.3
+  port: 8088
+
+#属性解释：https://github.com/alibaba/druid/wiki/DruidDataSource%E9%85%8D%E7%BD%AE%E5%B1%9E%E6%80%A7%E5%88%97%E8%A1%A8
+spring:
+  profiles: dev
+#  datasource:
+#    druid:
+#      driver-class-name: com.mysql.jdbc.Driver
+#      initial-size: 5
+#      max-active: 20
+#      min-idle: 5
+#      max-wait: 60000
+##      pool-prepared-statements: false
+##      max-pool-prepared-statement-per-connection-size: 20
+##      max-open-prepared-statements: 20 #和上面的等价
+#      validation-query: SELECT 'x''
+##      validation-query-timeout:
+#      test-on-borrow: false
+#      test-on-return: false
+#      test-while-idle: true
+##      time-between-eviction-runs-millis:
+#      min-evictable-idle-time-millis: 300000
+##      max-evictable-idle-time-millis:
+#      filters:  stat #配置多个英文逗号分隔
+##    name: test
+#    url: jdbc:mysql://localhost:3306/test
+#    username: root
+#    password: root
+##    # 使用druid数据源
+#    type: com.alibaba.druid.pool.DruidDataSource
+#    driver-class-name: com.mysql.jdbc.Driver
+#    filters: stat
+#    maxActive: 20
+#    initialSize: 1
+#    maxWait: 60000
+#    minIdle: 1
+#    timeBetweenEvictionRunsMillis: 60000
+#    minEvictableIdleTimeMillis: 300000
+#    validationQuery: select 'x'
+#    testWhileIdle: true
+#    testOnBorrow: false
+#    testOnReturn: false
+#    poolPreparedStatements: true
+#    maxOpenPreparedStatements: 20
+
+  data:
+    elasticsearch: #ElasticsearchProperties
+        cluster-name: my-cluster #默认即为elasticsearch
+        cluster-nodes: 127.0.0.1:9300 #配置es节点信息，逗号分隔，如果没有指定，则启动ClientNode
+#        properties: # Additional properties used to configure the client.
+        repositories:
+          enabled: true # Enable Elasticsearch repositories.
+
+#自定义变量
+elasticsearch:
+  host: 127.0.0.1
+  port: 9300
+  cluster-name: my-cluster
