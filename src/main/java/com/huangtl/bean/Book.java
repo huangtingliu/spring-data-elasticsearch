@@ -8,6 +8,7 @@ import java.io.Serializable;
 /**
  *  '@Document' 注释代表加入索引,默认所有的属性都会被建立索引、并且分词。
  *  '@Field' 通过@Field注解来进行详细的指定，如果没有特殊需求，那么只需要添加@Document即可
+ *  必须要有个@id注解字段
  */
 @Document(indexName = "book_index",type = "book",shards = 2)
 public class Book implements Serializable{
