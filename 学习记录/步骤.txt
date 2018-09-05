@@ -1,0 +1,484 @@
+一、elasticsearch安装(本文下载的是6.3.1)
+1.下载elasticseach
+https://www.elastic.co/downloads/elasticsearch
+解压下载的压缩文件，试着启动，在解压的目录的bin下运行elasticsearch.bat文件，启动成功后、默认地址127.0.0.1:9200，会出现介绍elasticsearch的json格式串
+
+二、单实例插件安装（web可视化插件elasticsearch-head为例）
+2.在github上下载web可视化插件 mobz/elasticsearch-head，解压
+
+3.这里需要安装node.js（v6.0版本以上），检查node环境，node -v命令检查nodejs版本号
+
+4.在elasticsearch-head解压目录下，npm install 命令安装依赖
+
+5.试着运行elasticsearch-head，在解压目录下运行npm run start命令启动，打开浏览器输入默认地址127.0.0.1::9100查看
+--这时连接状态是未连接，因为和elasticsearch存在跨域访问问题
+
+6.elasticsearch和elasticsearch-head插件是两个独立的个体，互相访问是有跨域问题的，所以需要更改配置
+--修改elasticsearch目录下config/elasticsearch.yml文件，在最后一行加上:
+http.cors.enabled: true
+http:cors.allow-origin: "*"
+
+7.重新启动elasticsearch，进入elasticsearch的bin目录，运行elasticsearch.bat文件
+
+8.重新启动elasticsearch-head,方法5，在解压目录下运行npm run start命令启动，打开浏览器输入默认地址127.0.0.1::9200查看
+--连接状态变为:集群健康值：green(0 of 0)，
+--green代表健康状态, 
+--yellow代表集群健康不是很好但可正常用, 
+--red代表集群健康已经很差了，可以搜索数据，但是出现丢失数据的问题
+
+
+三、分布式安装
+9.进入elasticsearch目录下，修改config/elasticsearch.yml文件：
+cluster.name: wali  （设置集群名字）
+node.name: master  （设置名字）
+node.master: true（指定为master）
+network.host: 127.0.0.1 (设置绑定IP，端口不修改默认9200)
+
+10.重启elasticsearch，进入elasticsearch的bin目录，运行elasticsearch.bat文件,打开head插件127.0.0.1:9100查看是否正常启动
+--将看到一个master，五角星图标
+
+11.新建从节点elasticsearch，新建一个文件夹es_slave,将下载的elasticsearch压缩包拷贝两份放入其中，分别解压es_slave1和es_slave2
+
+12.修改es_slave1和es_slave2的配置文件，分别修改es_slave1和es_slave2目录下config/elasticsearch.yml文件
+--es_slave1的config/elasticsearch.yml文件结尾加上：
+cluster.name: wali  （设置集群名字）
+node.name: slave1  （设置名字）
+network.host: 127.0.0.1 (设置绑定IP)
+http.port: 8200 (指定端口)
+discovery.zen.ping.unicast.hosts: ["127.0.0.1"] (找到master，不加这个是游离于集群之外的，找不到master指挥官)
+
+13.启动es_slave1，进入es_slave1目录执行./bin/elasticsearch -d命令,打开127.0.0.1:9200
+--将看到除了一个五角星图标的master节点之外，还多了一个名为slave1的随从节点
+
+14.建立第二个从节点slave2,修改es_slave2目录下config/elasticsearch.yml文件
+--es_slave2的config/elasticsearch.yml文件结尾加上：
+cluster.name: wali  （设置集群名字）
+node.name: slave2  （设置名字）
+network.host: 127.0.0.1 (设置绑定IP)
+http.port: 8000 (指定端口)
+discovery.zen.ping.unicast.hosts: ["127.0.0.1"] (找到master，不加这个是游离于集群之外的，找不到master指挥官)
+
+15.启动es_slave2，进入es_slave2目录执行./bin/elasticsearch -d命令,打开127.0.0.1:9200
+--将看到除了一个五角星图标的master节点和随从节点slave1之外，还多了一个名为slave2的随从节点
+
+
+四、es的基础概念
+集群：多个es节点的集合
+节点：es主节点或es从节点
+索引：含有相同属性的文档集合（名字来识别），相当于一个database数据库，比如说（图书数据库）
+类型：索引可以定义一个或多个类型、文档必须属于一个类型，相当于一个table表（比如说科学类图书、历史类图书...）
+文档：文档是可以被索引的基本数据单位，相当于一行row记录（比如说三国演义）
+分片：每个索引都有多个分片，每个分片是一个Lucene索引（假设一个索引数据量很大，硬盘压力大，搜索速度出现瓶颈），提高搜索以及其他操作性能效率
+--es默认创建5个分片，一个备份
+--只能创建索引的时候指定
+备份：拷贝一份分片就完成了分片的备份（当某分片失败或出现问题备份的分片就可以代替工作），提高可用性，还可以拿来执行搜索操作，分担搜索的压力
+--可以动态修改
+
+
+五、基本用法
+1.索引创建 restful api风格
+请求API基本格式http://ip:port/<索引>/<类型>/<文档id>,参数为json格式
+请求方法为常用HTPP动词 GET/PUT/POST/DELETE
+
+2.在head插件浏览器页面上创建索引（非结构化索引）
+--选择索引-新建索引，默认分片5个，备份1个，输入索引名称，点击OK，会弹出创建成功的提示信息
+--成功后在集群概览上回出现该索引
+--点击索引信息，其中"mappings": { }表示为非结构化索引
+
+3.创建结构化索引
+--点击符合查询[+]
+--在查询框的第二个输入框输入：<索引名>/<类型>/_mappings，如book/novel/_mappings
+--在textarea框输入json串，如：
+	{
+	  "novel": {
+	    "properties": {
+	      "title": {
+	        "type": "text"
+	      }
+	    }
+	  }
+	}
+
+--也可以在postman（htpp模拟器）中创建索引，本质上就是一个http请求，参数为json格式
+使用PUT方法,请求地址可以填：http://ip:port/<索引>，如127.0.0.1:9200/people
+请求方法选择:PUT
+参数如：
+{
+	"settings":{
+		"number_of_shards":3,
+		"number_of_replicas":1
+	},
+	"mappings":{
+		"man":{
+			"properties":{
+				"name":{
+					"type":"text"
+				},
+				"country":{
+					"type":"keyword"
+				},
+				"age":{
+					"type":"integer"
+				},
+				"date":{
+					"type":"date",
+					"format":"yyyy-MM-dd||yyyy-MM-dd HH:mm:ss||epoch_millis"
+				}
+			}
+		}
+	}
+}
+settings里的number_of_shards为分片数，number_of_replicas为备份数
+注意这里的参数mappings里面的type在5.x版本是可以有多个的，比如这里有一个man,还可以有一个woman，但在6.x版本只允许一个type，7.x将移除type
+
+
+4.插入文档
+--指定文档id插入
+使用PUT方法,请求格式http://ip:port/<索引>/<类型>/<文档id>，如127.0.0.1:9200/people/man/1
+参数json格式：
+{
+	"name":"huangtl",
+	"country":"China",
+	"age":26,
+	"date":"1992-01-01"
+}
+--自动产生文档id插入
+使用POST方法，请求格式http://ip:port/<索引>/<类型>/，如127.0.0.1:9200/people/man/
+{
+	"name":"xiaoming",
+	"country":"China",
+	"age":20,
+	"date":"1998-01-01"
+}
+
+5.修改文档
+使用POST方法，请求格式http://ip:port/<索引>/<类型>/<文档id>/_upate，如127.0.0.1:9200/people/man/1/_update
+参数为：
+{
+	"doc":{
+		"name":"修改后的name"
+	}
+}
+
+通过脚本修改文档
+使用POST方法，请求格式http://ip:port/<索引>/<类型>/<文档id>/_upate，如127.0.0.1:9200/people/man/1/_update
+参数为：
+{
+	"script":{
+		"lang":"painless",
+		"inline":"ctx._source.age += 10"
+	}
+}
+其中lang指定脚本语言，这里使用es内置的painless，inline重的ctx为上下文,_source为上下文属性，age为之前定义的字段, +=10表示将年龄加10后赋值给age
+
+也可以将值放在外部，修改参数为：
+{
+	"script":{
+		"lang":"painless",
+		"inline":"ctx._source.age = params.age",
+		"params":{
+			"age":100
+		}
+	}
+}
+
+
+6.删除文档和索引
+删除文档：使用DELETE方法,请求格式http://ip:port/<索引>/<类型>/<文档id>，如127.0.0.1:9200/people/man/1
+删除索引：使用DELETE方法,请求格式http://ip:port/<索引>，如127.0.0.1:9200/people
+
+7.查询
+--简单查询
+使用GET方法，请求格式http://ip:port/<索引>/<类型>/<文档id>，如127.0.0.1:9200/people/man/1
+--条件查询
+使用POST方法，请求格式http://ip:port/<索引>/_search，如127.0.0.1:9200/people/_search
+使用query、match_all、match关键字
+
+【A】查询所有
+参数为：
+{
+	"query":{
+		"match_all":{}
+	}
+}
+返回参数为：
+{
+  "took": 7,
+  "timed_out": false,
+  "_shards": {
+    "total": 3,
+    "successful": 3,
+    "skipped": 0,
+    "failed": 0
+  },
+  "hits": {
+    "total": 5,
+    "max_score": 1,
+    "hits": [
+      {
+        "_index": "people",
+        "_type": "man",
+        "_id": "ZZkUnWQB2w-Qdl1vkEMJ",
+        "_score": 1,
+        "_source": {
+          "name": "wangfei",
+          "country": "China",
+          "age": 38,
+          "date": "1988-01-01"
+        }
+      },
+      {
+        "_index": "people",
+        "_type": "man",
+        "_id": "ZpkVnWQB2w-Qdl1vIUPB",
+        "_score": 1,
+        "_source": {
+          "name": "anna",
+          "country": "USA",
+          "age": 24,
+          "date": "1994-01-01"
+        }
+      },
+      {
+        "_index": "people",
+        "_type": "man",
+        "_id": "1",
+        "_score": 1,
+        "_source": {
+          "name": "huangtl",
+          "country": "China",
+          "age": 26,
+          "date": "1992-01-01"
+        }
+      },
+      {
+        "_index": "people",
+        "_type": "man",
+        "_id": "Y5kSnWQB2w-Qdl1v1UO4",
+        "_score": 1,
+        "_source": {
+          "name": "xiaoming",
+          "country": "China",
+          "age": 20,
+          "date": "1998-01-01"
+        }
+      },
+      {
+        "_index": "people",
+        "_type": "man",
+        "_id": "ZJkUnWQB2w-Qdl1vCUNt",
+        "_score": 1,
+        "_source": {
+          "name": "xiaohong",
+          "country": "China",
+          "age": 28,
+          "date": "1999-01-01"
+        }
+      }
+    ]
+  }
+}
+
+返回参数解释，
+{
+	took：返回毫秒数，
+	hits:代表响应的全部结果
+	{
+		total:返回总条数
+		hits:返回的记录，默认为10条
+		[
+			{
+				_index:索引名
+				_type:类型	
+				_id: 自动id
+				_score: 匹配程度
+				_source:实体资源信息
+			}
+		]
+	}
+}
+
+【B】查询指定范围
+如何指定hits的返回条数
+
+修改请求参数为：
+{
+	"query":{
+		"match_all":{}
+	},
+	"from":1,
+	"size":1
+}
+
+from 代表从第几条记录开始（0为第一条），size表示显示记录数，这里from是1代表从第二条开始显示1条，即为第二条数据
+返回参数信息
+{
+  "took": 8,
+  "timed_out": false,
+  "_shards": {
+    "total": 3,
+    "successful": 3,
+    "skipped": 0,
+    "failed": 0
+  },
+  "hits": {
+    "total": 5,
+    "max_score": 1,
+    "hits": [
+      {
+        "_index": "people",
+        "_type": "man",
+        "_id": "ZpkVnWQB2w-Qdl1vIUPB",
+        "_score": 1,
+        "_source": {
+          "name": "anna",
+          "country": "USA",
+          "age": 24,
+          "date": "1994-01-01"
+        }
+      }
+    ]
+  }
+}
+
+【C】根据关键词查询
+请求参数修改为：
+{
+	"query":{
+		"match":{
+			"name":"huangtl"
+		}
+	}
+}
+
+【D】自定义排序
+{
+	"query":{
+		"match_all":{}
+	},
+	"sort": [
+		{
+			"date": {
+				"order": "desc"
+			}
+		}
+	]
+}
+
+--聚合查询
+使用POST方法，请求格式http://ip:port/<索引>/_search，如127.0.0.1:9200/people/_search
+使用aggs关键字
+
+简单聚合,只会返回字段值和count数
+{
+	"aggs":{
+		"group_by_country":{
+			"terms": {
+				"field": "country"
+			}
+		},
+		"group_by_age":{
+			"terms": {
+				"field": "age"
+			}
+		}
+	}
+}
+
+详细聚合，返回count、min、max、avg、sum
+{
+	"aggs":{
+		
+		"grades_age":{
+			"stats":{
+				"field": "age"
+			}
+		}
+	}
+}
+返回参数：
+{
+  "took": 5,
+  "timed_out": false,
+  "_shards": {
+    "total": 3,
+    "successful": 3,
+    "skipped": 0,
+    "failed": 0
+  },
+  "hits": {
+    "total": 5,
+    "max_score": 1,
+    "hits": [
+      {
+        "_index": "people",
+        "_type": "man",
+        "_id": "ZZkUnWQB2w-Qdl1vkEMJ",
+        "_score": 1,
+        "_source": {
+          "name": "wangfei",
+          "country": "China",
+          "age": 38,
+          "date": "1988-01-01"
+        }
+      },
+      {
+        "_index": "people",
+        "_type": "man",
+        "_id": "ZpkVnWQB2w-Qdl1vIUPB",
+        "_score": 1,
+        "_source": {
+          "name": "anna",
+          "country": "USA",
+          "age": 24,
+          "date": "1994-01-01"
+        }
+      },
+      {
+        "_index": "people",
+        "_type": "man",
+        "_id": "1",
+        "_score": 1,
+        "_source": {
+          "name": "huangtl",
+          "country": "China",
+          "age": 26,
+          "date": "1992-01-01"
+        }
+      },
+      {
+        "_index": "people",
+        "_type": "man",
+        "_id": "Y5kSnWQB2w-Qdl1v1UO4",
+        "_score": 1,
+        "_source": {
+          "name": "xiaoming",
+          "country": "China",
+          "age": 20,
+          "date": "1998-01-01"
+        }
+      },
+      {
+        "_index": "people",
+        "_type": "man",
+        "_id": "ZJkUnWQB2w-Qdl1vCUNt",
+        "_score": 1,
+        "_source": {
+          "name": "xiaohong",
+          "country": "China",
+          "age": 28,
+          "date": "1999-01-01"
+        }
+      }
+    ]
+  },
+  "aggregations": {
+    "grades_age": {
+      "count": 5,
+      "min": 20,
+      "max": 38,
+      "avg": 27.2,
+      "sum": 136
+    }
+  }
+}
